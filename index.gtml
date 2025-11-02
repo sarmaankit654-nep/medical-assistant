@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedDxD - Free Medical Differential Diagnosis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 20px;
+            color: white;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        
+        .main-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .input-section {
+            margin-bottom: 25px;
+        }
+        
+        .symptoms-input {
+            width: 100%;
+            height: 120px;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            margin: 10px 0;
+        }
+        
+        .generate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        .result-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+        
+        .template-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin: 25px 0;
+        }
+        
+        .template-card {
+            background: white;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .template-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        
+        .disclaimer {
+            background: #fff3cd;
+            border: 2px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 25px 0;
+            color: #856404;
+        }
+        
+        .ai-section {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .ai-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        @media (min-width: 768px) {
+            .container {
+                max-width: 700px;
+            }
+            
+            .template-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🩺 MedDxD</h1>
+            <p class="subtitle">Free Medical Differential Diagnosis Assistant</p>
+            <p style="opacity: 0.8; font-size: 0.9rem;">Educational Tool for Medical Students</p>
+        </header>
+        
+        <div class="main-card">
+            <div class="input-section">
+                <h2 style="color: #2c3e50; margin-bottom: 15px;">Describe Clinical Scenario</h2>
+                <textarea 
+                    id="symptomsInput" 
+                    class="symptoms-input"
+                    placeholder="Example: 25-year-old female with acute onset right lower quadrant pain, nausea, and fever for 12 hours. No vaginal bleeding. Vital signs stable..."
+                ></textarea>
+                <button class="generate-btn" onclick="generateDifferentialDiagnosis()">
+                    🧠 Generate Differential Diagnosis
+                </button>
+            </div>
+            
+            <div id="diagnosisResult" class="result-section">
+                <!-- Results will appear here -->
+            </div>
+        </div>
+
+        <div class="main-card">
+            <h2 style="color: #2c3e50; margin-bottom: 20px;">Quick Template Examples</h2>
+            <div class="template-grid">
+                <div class="template-card" onclick="loadTemplate('chest')">
+                    <h3>💔 Chest Pain</h3>
+                    <p>Cardiac, pulmonary, GI differentials with red flags</p>
+                </div>
+                
+                <div class="template-card" onclick="loadTemplate('abdominal')">
+                    <h3>🤢 Abdominal Pain</h3>
+                    <p>Differential by quadrant and urgency</p>
+                </div>
+                
+                <div class="template-card" onclick="loadTemplate('headache')">
+                    <h3>🤕 Headache</h3>
+                    <p>Primary vs secondary headaches</p>
+                </div>
+                
+                <div class="template-card" onclick="loadTemplate('sob')">
+                    <h3>😮‍💨 Shortness of Breath</h3>
+                    <p>Cardiac, pulmonary, other causes</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="disclaimer">
+            <h3>⚠️ IMPORTANT MEDICAL DISCLAIMER</h3>
+            <p><strong>EDUCATIONAL PURPOSE ONLY</strong></p>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+                <li>This tool is for medical education and clinical reasoning practice</li>
+                <li>NOT for actual patient diagnosis or treatment</li>
+                <li>Always consult licensed healthcare professionals</li>
+                <li>In emergencies, contact emergency services immediately</li>
+                <li>Verify all information with standard medical textbooks</li>
+            </ul>
+        </div>
+
+        <div class="main-card ai-section">
+            <h2 style="color: #2c3e50; margin-bottom: 15px;">Need More Detailed Discussion?</h2>
+            <p style="margin-bottom: 20px; color: #666;">Connect with AI Medical Tutor for comprehensive case analysis</p>
+            <a href="https://chat.openai.com/" class="ai-btn" target="_blank">
+                🚀 Launch AI Medical Tutor
+            </a>
+            <p style="font-size: 0.9rem; color: #888; margin-top: 10px;">(Free ChatGPT account required)</p>
+        </div>
+    </div>
+
+    <script>
+        // Medical knowledge database
+        const medicalDB = {
+            chest: {
+                title: "Chest Pain Differential Diagnosis",
+                content: `
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">EDUCATIONAL DIFFERENTIAL: CHEST PAIN</h3>
+                
+                <div style="background: #ffe6e6; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #dc3545;">
+                    <h4 style="color: #dc3545; margin-bottom: 10px;">🚨 CAN'T MISS DIAGNOSES</h4>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>Acute Coronary Syndrome</strong> - Crushing substernal pain, radiation to arm/jaw, diaphoresis, nausea</li>
+                        <li><strong>Pulmonary Embolism</strong> - Pleuritic pain, dyspnea, tachycardia, risk factors for DVT</li>
+                        <li><strong>Aortic Dissection</strong> - Tearing pain, radiation to back, pulse deficits, hypertension</li>
+                    </ul>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">OTHER CONSIDERATIONS</h4>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>Pericarditis</strong> - Pleuritic, relief sitting forward, pericardial rub, diffuse ST elevation</li>
+                        <li><strong>GERD/Esophagitis</strong> - Burning quality, after meals, acid regurgitation, relief with antacids</li>
+                        <li><strong>Costochondritis</strong> - Reproducible tenderness, no systemic symptoms, normal vital signs</li>
+                        <li><strong>Pneumonia</strong> - Fever, cough, sputum production, abnormal lung exam, CXR findings</li>
+                        <li><strong>Panic Attack</strong> - Associated anxiety, palpitations, no objective findings, normal workup</li>
+                    </ul>
+                </div>
+                
+                <div style="background: #e8f4f8; padding: 15px; border-radius: 8px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">📋 DIAGNOSTIC APPROACH</h4>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>Immediate:</strong> ECG, troponin, CXR, vital signs</li>
+                        <li><strong>Based on suspicion:</strong> CT angiography, echocardiogram, stress testing</li>
+                        <li><strong>Risk stratification:</strong> HEART score, Wells criteria for PE</li>
+                        <li><strong>Specialty referral:</strong> Cardiology, pulmonology, GI as needed</li>
+                    </ul>
+                </div>
+                `
+            },
+            
+            abdominal: {
+                title: "Abdominal Pain Differential Diagnosis",
+                content: `
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">EDUCATIONAL DIFFERENTIAL: ABDOMINAL PAIN</h3>
+                
+                <div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px;">
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <strong>Right Upper Quadrant:</strong>
+                        <ul style="margin: 8px 0; padding-left: 20px;">
+                            <li><strong>Cholecystitis</strong> - Fever, Murphy's sign, leukocytosis</li>
+                            <li><strong>Hepatitis</strong> - Jaundice, elevated LFTs, risk factors</li>
+                            <li><strong>PUD</strong> - Burning pain, relation to meals, H. pylori</li>
+                            <li><strong>Pneumonia</strong> - Fever, cough, abnormal lung exam</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <strong>Right Lower Quadrant:</strong>
+                        <ul style="margin: 8px 0; padding-left: 20px;">
+                            <li><strong>Appendicitis</strong> - Migration pain, fever, rebound tenderness</li>
+                            <li><strong>Ovarian pathology</strong> - Adnexal mass, menstrual changes</li>
+                            <li><strong>Diverticulitis</strong> - Fever, leukocytosis, older age</li>
+                            <li><strong>Ectopic pregnancy</strong> - Amenorrhea, positive β-hCG, EMERGENCY</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                        <strong>Left Upper Quadrant:</strong>
+                        <ul style="margin: 8px 0; padding-left: 20px;">
+                            <li><strong>Splenic pathology</strong> - Trauma history, mononucleosis</li>
+                            <li><strong>Pancreatitis</strong> - Epigastric radiation to back, elevated lipase</li>
+                            <li><strong>PUD</strong> - Burning pain, relation to meals</li>
+                            <li><strong>Diverticulitis</strong> - Fever, leukocytosis, older age</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #dc3545;">
+                        <strong>Left Lower Quadrant:</strong>
+                        <ul style="margin: 8px 0; padding-left: 20px;">
+                            <li><strong>Diverticulitis</strong> - Fever, leukocytosis, older age</li>
+                            <li><strong>Ovarian pathology</strong> - Adnexal mass, menstrual changes</li>
+                            <li><strong>IBD</strong> - Diarrhea, weight loss, blood in stool</li>
+                            <li><strong>Renal stone</strong> - Colicky pain, radiation to groin, hematuria</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div style="background: #ffe6e6; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <h4 style="color: #dc3545; margin-bottom: 10px;">🚨 SURGICAL EMERGENCIES</h4>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li>Appendicitis</li>
+                        <li>Bowel obstruction</li>
+                        <li>Perforated viscus</li>
+                        <li>Mesenteric ischemia</li>
+                        <li>Ruptured ectopic pregnancy</li>
+                    </ul>
+                </div>
+                
+                <div style="background: #e8f4f8; padding: 15px; border-radius: 8px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">📋 DIAGNOSTIC APPROACH</h4>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>Labs:</strong> CBC, metabolic panel, lipase, LFTs, urinalysis</li>
+                        <li><strong>Imaging:</strong> Ultrasound, CT abdomen with contrast</li>
+                        <li><strong>Special tests:</strong> Endoscopy, colonoscopy based on location</li>
+                        <li><strong>Consultation:</strong> Surgery, GI, GYN as indicated</li>
+                    </ul>
+                </div>
+                `
+            },
+            
+            headache: {
+                title: "Headache Differential Diagnosis",
+                content: `
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">EDUCATIONAL DIFFERENTIAL: HEADACHE</h3>
+                
+                <div style="background: #ffe6e6; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <h4 style="color: #dc3545; margin-bottom: 10px;">🚨 SECONDARY HEADACHES (CAN'T MISS)</h4>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>Subarachnoid Hemorrhage</strong> - Thunderclap onset, worst headache of life</li>
+                        <li><strong>Meningitis/Encephalitis</strong> - Fever, neck stiffness, altered mental status</li>
+                        <li><strong>Temporal Arteritis</strong> - Age >50, jaw claudication, vision changes</li>
+                        <li><strong>Mass Lesion</strong> - Progressive, worse in AM, focal neuro signs</li>
+                    </ul>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">PRIMARY HEADACHES</h4>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>Migraine</strong> - Unilateral, throbbing, aura, photophobia, nausea</li>
+                        <li><strong>Tension-Type</strong> - Bilateral, band-like, no nausea/vomiting</li>
+                        <li><strong>Cluster</strong> - Unilateral, severe, orbital, autonomic symptoms</li>
+                    </ul>
+                </div>
+                
+                <div style="background: #e8f4f8; padding: 15px; border-radius: 8px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">📋 DIAGNOSTIC APPROACH</h4>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>Red flags:</strong> SNOOP4 mnemonic (Systemic symptoms, Neurologic deficits, Onset sudden, Older age, Positional, Precipitated by Valsalva)</li>
+                        <li><strong>Imaging:</strong> CT head, MRI brain if indicated</li>
+                        <li><strong>Labs:</strong> ESR/CRP for temporal arteritis</li>
+                        <li><strong>LP:</strong> If SAH suspected with negative CT</li>
+                    </ul>
+                </div>
+                `
+            },
+            
+            sob: {
+                title: "Shortness of Breath Differential Diagnosis",
+                content: `
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">EDUCATIONAL DIFFERENTIAL: DYSPNEA</h3>
+                
+                <div style="background: #ffe6e6; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <h4 style="color: #dc3545; margin-bottom: 10px;">🚨 EMERGENT CAUSES</h4>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>Pulmonary Embolism</strong> - Pleuritic pain, hemoptysis, DVT signs</li>
+                        <li><strong>ACS/Heart Failure</strong> - Chest pain, edema, elevated JVP</li>
+                        <li><strong>Pneumothorax</strong> - Sudden onset, decreased breath sounds</li>
+                        <li><strong>ARDS</strong> - Bilateral infiltrates, hypoxemia, risk factors</li>
+                    </ul>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">OTHER CAUSES</h4>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>COPD/Asthma</strong> - Wheezing, prolonged expiration, history</li>
+                        <li><strong>Pneumonia</strong> - Fever, cough, sputum, consolidation</li>
+                        <li><strong>Anemia</strong> - Fatigue, pallor, low hemoglobin</li>
+                        <li><strong>Anxiety</strong> - Associated stress, no objective findings</li>
+                        <li><strong>Obesity</strong> - BMI >30, worse with exertion</li>
+                    </ul>
+                </div>
+                
+                <div style="background: #e8f4f8; padding: 15px; border-radius: 8px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">📋 DIAGNOSTIC APPROACH</h4>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>Initial:</strong> CXR, ECG, ABG, CBC, BNP</li>
+                        <li><strong>Cardiac:</strong> Echo, troponin if ACS suspected</li>
+                        <li><strong>Pulmonary:</strong> CT angiography, PFTs, V/Q scan</li>
+                        <li><strong>Other:</strong> D-dimer, thyroid function, iron studies</li>
+                    </ul>
+                </div>
+                `
+            }
+        };
+
+        // Load template into text area
+        function loadTemplate(templateType) {
+            const templates = {
+chest: "45-year-old male with crushing substernal chest pain radiating to left arm, diaphoresis, and nausea for 30 minutes. History of hypertension and smoking.",
+                abdominal: "25-year-old female with acute right lower quadrant pain starting around umbilicus, nausea, fever 38.5°C, no vaginal bleeding. Last menstrual period 2 weeks ago.",
+                headache: "35-year-old female with sudden severe headache described as 'worst of my life', photophobia, neck stiffness. No fever. No trauma.",
+                sob: "60-year-old male with progressive shortness of breath over 2 weeks, orthopnea, bilateral leg edema, weight gain of 5kg. History of hypertension and diabetes."
+            };
+// Generate differential diagnosis
+        function generateDifferentialDiagnosis() {
+            const symptoms = document.getElementById('symptomsInput').value.trim().toLowerCase();
+            const resultDiv = document.getElementById('diagnosisResult');
+            
+            if (!symptoms) {
+                alert('Please describe the clinical scenario first');
+                return;
+            }
+// Show loading
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div class="loading">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">🩺</div>
+                    <p style="font-weight: 600; color: #2c3e50;">Analyzing Clinical Presentation...</p>
+                    <p style="color: #6c757d;">Generating educational differential diagnosis</p>
+                </div>
+            `;
+            // Simulate processing
+            setTimeout(() => {
+                let diagnosisHTML = '';
+                let matchedTemplate = false;
+                
+                // Pattern matching
+                if (symptoms.includes('chest') && symptoms.includes('pain')) {
+                    diagnosisHTML = medicalDB.chest.content;
+                    matchedTemplate = true;
+                } else if ((symptoms.
+includes('abdominal') || symptoms.includes('abdomen')) && symptoms.includes('pain')) {
+                    diagnosisHTML = medicalDB.abdominal.content;
+                    matchedTemplate = true;
+                } else if (symptoms.includes('headache')) {
+                    diagnosisHTML = medicalDB.headache.content;
+                    matchedTemplate = true;
+                } else if (symptoms.includes('breath') || symptoms.includes('sob') || symptoms.includes('dyspnea')) {
+                    diagnosisHTML = medicalDB.sob.content;
+matchedTemplate = true;
+                } else {
+                    // Generic template
+                    diagnosisHTML = `
+                        <h3 style="color: #2c3e50; margin-bottom: 15px;">EDUCATIONAL DIFFERENTIAL DIAGNOSIS</h3>
+<div style="margin-bottom: 20px;">
+                            <strong>Clinical Presentation:</strong>
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #667eea;">
+                                "${symptoms}"
+                            </div>
+                        </div>
+                        
+                        <div style="background: #e8f4f8; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <h4 style="color: #2c3e50; margin-bottom: 15px;">🧠 DIFFERENTIAL DIAGNOSIS</h4>
+                            <ol style="margin: 15px 0; padding-left: 25px;">
+                                <li style="margin-bottom: 12px;">
+                                    <strong>Most Likely Condition</strong><br>
+                                    <span style="color: #6c757d; font-size: 14px;">Based on key clinical features from the presentation</span>
+                                </li>
+                        <li style="margin-bottom: 12px;">
+                                    <strong>Also Consider</strong><br>
+                                    <span style="color: #6c757d; font-size: 14px;">Alternative possibilities that share similar features</span>
+                                </li>
+                                
+                                <li style="margin-bottom: 12px;">        
+                                <strong>Can't Miss Diagnosis</strong><br>
+                                    <span style="color: #6c757d; font-size: 14px;">Serious conditions that must be ruled out</span>
+                                </li>
+                                
+                                <li style="margin-bottom: 12px;">
+                                    <strong>Less Common Possibilities</strong><br>
+                                    <span style="color: #6c757d; font-size: 14px;">Rare but important considerations</span>
+                                    </li>
+                            </ol>
+                        </div>
+                        
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <h4 style="color: #856404; margin-bottom: 10px;">📋 SUGGESTED WORKUP</h4>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                <li><strong>Initial evaluation:</strong> Vital signs, focused physical examination</li>
+                               <li><strong>Basic labs:</strong> Complete blood count, comprehensive metabolic panel</li>
+                                <li><strong>Targeted testing:</strong> Based on clinical suspicion and presentation</li>
+                                <li><strong>Imaging:</strong> As indicated by specific symptoms and findings</li>
+                                <li><strong>Specialist referral:</strong> Appropriate consultation based on working diagnosis</li>
+                            </ul>
+                        </div> 
+                        ${!matchedTemplate ? `
+                        <div style="background: #d4edda; padding: 15px; border-radius: 8px;">
+                            <h4 style="color: #155724; margin-bottom: 10px;">💡 TIP FOR BETTER RESULTS</h4>
+                            <p>Include these details for more specific differentials:</p>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                <li>Patient age and gender</li>
+                                <li>Specific symptom location and quality</li>
+                                <li>Associated symptoms and timing</li>
+                                <li>Relevant medical history and risk factors</li>
+                                <li>Vital signs and key physical findings</li>
+                            </ul>
+                        </div>
+                        ` : ''}
+                    `;
+                }
+                // Add safety disclaimer
+                diagnosisHTML += `
+                    <div style="background: #f8d7da; padding: 20px; border-radius: 10px; margin-top: 25px; border-left: 4px solid #dc3545;">
+                        <h4 style="color: #dc3545; margin-bottom: 15px;">⚠️ CRITICAL SAFETY DISCLAIMER</h4>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>This is an <strong>EDUCATIONAL TOOL</strong> for learning clinical reasoning</li>
+                            <li><strong>NOT</strong> for actual patient care, diagnosis, or treatment decisions</li>
+                            <li>Always consult licensed healthcare professionals for medical concerns</li>
+                            <li>In emergency situations, contact emergency services immediately</li>
+                            <li>Verify all information with standard medical textbooks and guidelines</li>
+                            <li>Clinical experience and judgment cannot be replaced by AI tools</li>
+                        </ul>
+                    </div>
+                `;
+                resultDiv.innerHTML = diagnosisHTML;
+                
+            }, 2000);
+        }
+
+        // Enter key support for textarea
+        document.getElementById('symptomsInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                generateDifferentialDiagnosis();
+            }
+        });
+    </script>
+</body>
+</html>
